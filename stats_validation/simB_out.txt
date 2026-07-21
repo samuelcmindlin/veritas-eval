@@ -1,0 +1,20 @@
+== B: nested seed x cluster (G=25) ==
+S= 5 seed_share=0.0 inner=boot  -> size 0.057/0.053
+S= 5 seed_share=0.3 inner=boot  -> size 0.063/0.060
+S= 5 seed_share=0.6 inner=boot  -> size 0.077/0.072
+S=10 seed_share=0.3 inner=boot  -> size 0.060/0.063
+S=10 seed_share=0.6 inner=boot  -> size 0.065/0.068
+S= 5 seed_share=0.3 inner=fixed -> size 0.103/0.109
+S= 5 seed_share=0.6 inner=fixed -> size 0.169/0.176
+== B extra: smooth mean, cluster-only, G sweep (seed_share=0) ==
+G=20 -> size 0.057/0.053
+G=25 -> size 0.049/0.047
+G=30 -> size 0.045/0.045
+== C-a: DiD triplets intact ==
+G=20 -> size 0.065/0.080
+G=25 -> size 0.072/0.071
+G=30 -> size 0.063/0.059
+== C-b: cross-family, shared seeds rho_s=0.8 ==
+paired_seed_resample=True -> size 0.057/0.061 meanCIwidth=0.5866
+paired_seed_resample=False -> size 0.043/0.046 meanCIwidth=0.6270
+total 52.5s

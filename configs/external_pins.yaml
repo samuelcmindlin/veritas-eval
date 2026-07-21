@@ -1,0 +1,16 @@
+# External dependencies: pinned, NEVER vendored (see licensing notes).
+# Clones live under external/ (gitignored). Re-clone at the pinned commit.
+
+deception_detection:
+  repo: https://github.com/ApolloResearch/deception-detection
+  commit: f8ec4010e74927394709dffa22b97bdf8cd5a62f
+  license: "NONE (verified 2026-07-07) — external pinned dependency; do not vendor; publish only our own code (DEV plan §4 Stage 0)"
+  cloned_to: external/deception-detection
+  used_by: src/analysis/stage0a.py (shipped example_results scores only)
+
+llm_liedetector:  # Pacchiardi et al. 2024 anchor (Stage 0c, prereg F11)
+  repo: https://github.com/LoryPack/LLM-LieDetector
+  commit: c5689fa2615368cd7c3f3c15dbb60ea2126006c7
+  license: "BSD-3-Clause (verified 2026-07-07)"
+  cloned_to: external/LLM-LieDetector
+  used_by: src/analysis/stage0c.py (shipped processed_questions features + probe-group indices)

@@ -1,0 +1,154 @@
+{
+ "provenance": {
+  "generated_utc": "2026-07-08T18:10:24.280115+00:00",
+  "our_git_sha": "e605d6f2e5225a7f81277e1420e8d28cd3b6d576",
+  "external_repo": "LoryPack/LLM-LieDetector (BSD-3-Clause)",
+  "external_git_sha": "c5689fa2615368cd7c3f3c15dbb60ea2126006c7",
+  "feature_file_sha256": {
+   "synthetic_facts_all.json": "1419539ecd72cd1081b778d5aa6821174bf0b17105f1ddfcac2f56602aa422cd",
+   "questions_1000_all.json": "2711ac7ca8f1f750d7cff2e84ac458e5b3a4832dad3b5f32b674dbaecffa541d",
+   "wikidata.json": "73eae101970dbbcfa433ea008611e17b74f01d9827239d3f51fe8076e508a734",
+   "commonsense_QA_v2_dev.json": "8ad4eca64708a80b6c220801d75509fd000f4388839e8fd0fdeb9c87540315a1",
+   "tatoeba-fra-eng.json": "d388d1fa4a4b98701281c1bb1f58cd92fd1487d8aa5ed7dc6399722fc3e56e65",
+   "tatoeba-eng-fra.json": "8a5154f6c3e4341c8379c195655bba7d8bc3675e7653fff6e748018db0942aae",
+   "sciq.json": "825f5ea903b353db2c3ff647184bca13082db07a25ecc5ffef867e22692b1711",
+   "mathematical_problems.json": "0d603f6a4e3fb9b1ebf42b794eec928a05b86a9127d928fadd0de1e06f343f9c",
+   "anthropic_awareness_ai.json": "0793dea1e648f84c41f91be48490bcb0f6aaf6483e697c1c4655cf7def4df44d",
+   "anthropic_awareness_architecture.json": "c13cc01b3fff7cf8e1149b4d1652314b1b51ad73d8b26279faef5ff7b734e3a3",
+   "anthropic_awareness_nn_architecture.json": "a8b8ae9e4c44f6e9f6ac2c59653d1fdf3a52e87bf26aebdc47f166d7bb77ecbd"
+  },
+  "rows_kept_per_file": [
+   "synthetic_facts_all.json:119",
+   "questions_1000_all.json:105",
+   "wikidata.json:110",
+   "commonsense_QA_v2_dev.json:72",
+   "tatoeba-fra-eng.json:88",
+   "tatoeba-eng-fra.json:78",
+   "sciq.json:77",
+   "mathematical_problems.json:87",
+   "anthropic_awareness_ai.json:71",
+   "anthropic_awareness_architecture.json:57",
+   "anthropic_awareness_nn_architecture.json:52"
+  ],
+  "n_questions": 916,
+  "split": "paired 70/30, RandomState(42), mirrored from classification_utils.py:45",
+  "python": "3.11.1",
+  "numpy": "2.2.4"
+ },
+ "qualification": {
+  "pass": true,
+  "auc_tolerance": 0.002,
+  "qualification_floor": 0.9,
+  "worst_abs_diff": 2.363636363633681e-05
+ },
+ "rows": [
+  {
+   "feature_type": "logprobs",
+   "probe_group": "all_probes",
+   "n_features": 65,
+   "auroc_ours": 0.9997752066115703,
+   "auroc_published": 0.99978,
+   "abs_diff": 4.7933884297357565e-06,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "logprobs",
+   "probe_group": "no_lie",
+   "n_features": 14,
+   "auroc_ours": 0.9847933884297521,
+   "auroc_published": 0.98479,
+   "abs_diff": 3.388429752004818e-06,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "logprobs",
+   "probe_group": "lie",
+   "n_features": 24,
+   "auroc_ours": 0.9999603305785124,
+   "auroc_published": 0.99996,
+   "abs_diff": 3.3057851245299474e-07,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "logprobs",
+   "probe_group": "knowable",
+   "n_features": 10,
+   "auroc_ours": 0.991603305785124,
+   "auroc_published": 0.9916,
+   "abs_diff": 3.305785123974836e-06,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "logprobs",
+   "probe_group": "subsets_union",
+   "n_features": 48,
+   "auroc_ours": 0.9997619834710744,
+   "auroc_published": 0.99976,
+   "abs_diff": 1.9834710743849016e-06,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "binary",
+   "probe_group": "all_probes",
+   "n_features": 65,
+   "auroc_ours": 0.9998809917355372,
+   "auroc_published": 0.99988,
+   "abs_diff": 9.91735537247962e-07,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "binary",
+   "probe_group": "no_lie",
+   "n_features": 14,
+   "auroc_ours": 0.9475702479338843,
+   "auroc_published": 0.94757,
+   "abs_diff": 2.479338843119905e-07,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "binary",
+   "probe_group": "lie",
+   "n_features": 24,
+   "auroc_ours": 0.9997289256198347,
+   "auroc_published": 0.99973,
+   "abs_diff": 1.0743801652779439e-06,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "binary",
+   "probe_group": "knowable",
+   "n_features": 10,
+   "auroc_ours": 0.9788363636363636,
+   "auroc_published": 0.97886,
+   "abs_diff": 2.363636363633681e-05,
+   "match": true,
+   "above_qualification_floor": true
+  },
+  {
+   "feature_type": "binary",
+   "probe_group": "subsets_union",
+   "n_features": 48,
+   "auroc_ours": 0.9998413223140495,
+   "auroc_published": 0.99984,
+   "abs_diff": 1.3223140495899344e-06,
+   "match": true,
+   "above_qualification_floor": true
+  }
+ ],
+ "operating_point_f11": {
+  "recall_at_1pct_fpr": 0.9963636363636363,
+  "achievable_fpr_count": 276,
+  "granularity_gate_passes": true,
+  "n_test_honest": 275,
+  "n_test_lie": 275,
+  "note": "48-probe logprob detector under our \u00a77 per-condition policy; binary-feature variants are coarser \u2014 F11's tie rule exists for that case"
+ }
+}

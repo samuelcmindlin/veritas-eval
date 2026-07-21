@@ -1,0 +1,15 @@
+# F17 first-pass power simulation — pinned synthetic priors (Pre-Reg §10).
+# B=500 is a first-pass economy (confirmatory floor is 2000); the
+# freeze-deposited computation reruns at full B with Stage-A-updated priors.
+master_seed: 20260708
+out_dir: results/power_firstpass
+
+configs:
+  # the presumptive primary-cell design point (Pre-Reg §10 floors)
+  - {name: design_point,      G: 25, n_pos: 300, n_neg: 1750, S: 10, n_sims: 100, B: 500}
+  # cluster-floor sensitivity
+  - {name: low_clusters,      G: 20, n_pos: 300, n_neg: 1750, S: 10, n_sims: 100, B: 500}
+  # the §10 raised joint floors said to be needed for the Robust row
+  - {name: equivalence_floors, G: 50, n_pos: 500, n_neg: 3500, S: 10, n_sims: 100, B: 500}
+  # a deliberately undersized cell (expect underpowered — sanity direction)
+  - {name: undersized,        G: 25, n_pos: 150, n_neg: 500,  S: 5,  n_sims: 100, B: 500}

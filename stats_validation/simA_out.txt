@@ -1,0 +1,7 @@
+G=20 ICC=0.2 mc=2500 B=399 | perc 0.032/0.031 basic 0.083/0.093 jack-t 0.028/0.031 | empSD(T)=0.0583 meanBootSD=0.0603 ratio=1.034
+G=25 ICC=0.2 mc=2500 B=399 | perc 0.035/0.034 basic 0.089/0.081 jack-t 0.034/0.026 | empSD(T)=0.0562 meanBootSD=0.0570 ratio=1.014
+G=30 ICC=0.2 mc=2500 B=399 | perc 0.029/0.028 basic 0.077/0.078 jack-t 0.025/0.028 | empSD(T)=0.0519 meanBootSD=0.0548 ratio=1.057
+G=20 ICC=0.5 mc=2500 B=399 | perc 0.013/0.014 basic 0.095/0.095 jack-t 0.012/0.012 | empSD(T)=0.0484 meanBootSD=0.0507 ratio=1.048
+G=25 ICC=0.5 mc=2500 B=399 | perc 0.012/0.024 basic 0.085/0.107 jack-t 0.012/0.020 | empSD(T)=0.0477 meanBootSD=0.0485 ratio=1.017
+G=30 ICC=0.5 mc=2500 B=399 | perc 0.023/0.024 basic 0.104/0.095 jack-t 0.015/0.021 | empSD(T)=0.0465 meanBootSD=0.0468 ratio=1.006
+total 213.4s

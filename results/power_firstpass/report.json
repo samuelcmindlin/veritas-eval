@@ -1,0 +1,118 @@
+{
+ "provenance": {
+  "generated_utc": "2026-07-08T19:23:26.390384+00:00",
+  "our_git_sha": "53e6f929ab95c0b6a411d5847e1da8f21e0d26c8",
+  "priors": {
+   "baseline_recall_at_1pct": 0.65,
+   "sd_item": 0.5,
+   "sd_cluster": 0.3,
+   "sd_cluster_honest": 0.3,
+   "sd_seed": 0.2,
+   "sd_seed_uncancelled": 0.15,
+   "sd_noise": 1.0,
+   "sesoi": 0.1,
+   "target_fpr": 0.01
+  },
+  "python": "3.11.1",
+  "numpy": "2.2.4",
+  "note": "first pass on pinned synthetic priors (F17 pin 2); re-estimate priors from Stage A before freeze; B below the confirmatory 2000 floor is a first-pass economy \u2014 rerun at B=2000 for the freeze-deposited computation"
+ },
+ "results": [
+  {
+   "config": {
+    "name": "design_point",
+    "G": 25,
+    "n_pos": 300,
+    "n_neg": 1750,
+    "S": 10,
+    "n_sims": 100,
+    "B": 500
+   },
+   "calibration": {
+    "sep_control": 3.155273262596893,
+    "sep_treated": 2.8325449650401424,
+    "oracle_delta": 0.10539750000000003
+   },
+   "superiority_power_P(L>0|SESOI)": 0.96,
+   "equivalence_power_P(U<SESOI|0)": 0.99,
+   "type_I_P(L>0|0)": 0.0,
+   "tost_leg_size_P(U<0|0)": 0.0,
+   "coverage_at_SESOI": 0.98,
+   "coverage_at_null": 1.0,
+   "design_effect": 1.835123016109999,
+   "effective_n_pos_per_cond": 163
+  },
+  {
+   "config": {
+    "name": "low_clusters",
+    "G": 20,
+    "n_pos": 300,
+    "n_neg": 1750,
+    "S": 10,
+    "n_sims": 100,
+    "B": 500
+   },
+   "calibration": {
+    "sep_control": 3.155273262596893,
+    "sep_treated": 2.8325449650401424,
+    "oracle_delta": 0.10539750000000003
+   },
+   "superiority_power_P(L>0|SESOI)": 0.97,
+   "equivalence_power_P(U<SESOI|0)": 0.95,
+   "type_I_P(L>0|0)": 0.02,
+   "tost_leg_size_P(U<0|0)": 0.03,
+   "coverage_at_SESOI": 0.95,
+   "coverage_at_null": 0.95,
+   "design_effect": 1.4311368271502731,
+   "effective_n_pos_per_cond": 210
+  },
+  {
+   "config": {
+    "name": "equivalence_floors",
+    "G": 50,
+    "n_pos": 500,
+    "n_neg": 3500,
+    "S": 10,
+    "n_sims": 100,
+    "B": 500
+   },
+   "calibration": {
+    "sep_control": 3.155273262596893,
+    "sep_treated": 2.8325449650401424,
+    "oracle_delta": 0.10539750000000003
+   },
+   "superiority_power_P(L>0|SESOI)": 0.99,
+   "equivalence_power_P(U<SESOI|0)": 0.96,
+   "type_I_P(L>0|0)": 0.03,
+   "tost_leg_size_P(U<0|0)": 0.03,
+   "coverage_at_SESOI": 0.94,
+   "coverage_at_null": 0.94,
+   "design_effect": 1.6756449590033893,
+   "effective_n_pos_per_cond": 298
+  },
+  {
+   "config": {
+    "name": "undersized",
+    "G": 25,
+    "n_pos": 150,
+    "n_neg": 500,
+    "S": 5,
+    "n_sims": 100,
+    "B": 500
+   },
+   "calibration": {
+    "sep_control": 3.155273262596893,
+    "sep_treated": 2.8325449650401424,
+    "oracle_delta": 0.10539750000000003
+   },
+   "superiority_power_P(L>0|SESOI)": 0.38,
+   "equivalence_power_P(U<SESOI|0)": 0.43,
+   "type_I_P(L>0|0)": 0.01,
+   "tost_leg_size_P(U<0|0)": 0.01,
+   "coverage_at_SESOI": 1.0,
+   "coverage_at_null": 0.98,
+   "design_effect": 1.1539348094404107,
+   "effective_n_pos_per_cond": 130
+  }
+ ]
+}

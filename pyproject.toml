@@ -1,0 +1,16 @@
+[project]
+name = "veritas-eval"
+version = "0.0.1"
+description = "Does evaluation-awareness causally degrade deception detection? Pre-registered study harness."
+requires-python = ">=3.11"
+dependencies = [
+    "numpy==2.2.4",
+    "scipy==1.17.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

@@ -1,0 +1,4 @@
+G=20 iccD=0.35 iccH=0.05 | perc 0.039/0.037 basic 0.075/0.091 jack-t 0.038/0.038 | empSD=0.0597 bootSD/empSD=0.992
+G=25 iccD=0.35 iccH=0.05 | perc 0.036/0.035 basic 0.079/0.083 jack-t 0.034/0.036 | empSD=0.0559 bootSD/empSD=1.019
+G=30 iccD=0.35 iccH=0.05 | perc 0.031/0.039 basic 0.069/0.077 jack-t 0.028/0.029 | empSD=0.0514 bootSD/empSD=1.071
+total 63.6s

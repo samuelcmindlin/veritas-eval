@@ -1,0 +1,40 @@
+# Stage 0b — pipeline validation (activation -> probe -> metrics), config-driven.
+# NOT a baseline reproduction and NOT confirmatory (DEV plan §4, Stage 0b).
+id: stage0b_pipeline_validation
+
+subject:
+  # primary substrate (license-gated on HF; requires `hf auth login` with the
+  # Gemma license accepted). The runner falls back to `fallback_model` with a
+  # prominent report label if the primary cannot be loaded.
+  model_name: google/gemma-2-2b-it
+  revision: main          # resolved to a commit SHA at run time -> provenance
+  fallback_model: Qwen/Qwen2.5-0.5B-Instruct
+  fallback_revision: main
+  # bfloat16: Gemma-2 is bf16-trained and its logit soft-capping overflows in
+  # float16; float32 (~10.4 GB weights) exceeds a 16 GB machine's MPS budget.
+  dtype: bfloat16
+
+read_layer_frac: 0.5      # probe reads resid_pre at round(frac * n_layers)
+diagnostic_layer_fracs: [0.25, 0.75]
+
+generation_smoke:         # DEV §9 item 2: generate; log decoding params/seed
+  prompts:
+    - "The capital of France is"
+    - "Water is made of"
+    - "Briefly, why is the sky blue?"
+  seeds: [0, 1]
+  max_new_tokens: 24
+  temperature: 0.7
+
+probe:
+  seeds: [0, 1, 2]        # toy scale; primary-cell floor of >=10 is Stage C
+  reg_coeff: 10.0
+  train_cluster_fraction: 0.6
+
+metrics:
+  bootstrap_B: 500        # toy scale; confirmatory floor is 2000 (PREREG_MIN_B)
+  ci: 0.90
+  rng_seed: 20260708
+
+cache_dir: activations/stage0b
+out_dir: results/stage0b

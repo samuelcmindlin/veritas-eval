@@ -1,0 +1,129 @@
+{
+ "provenance": {
+  "started_utc": "2026-07-08T15:56:19.057867+00:00",
+  "finished_utc": "2026-07-08T15:57:13.771235+00:00",
+  "our_git_sha": "5cfbe64f70a1e88e193245e782b1c2070fde1077",
+  "config_hash": "be166d7fbc78c752c5c16581e5b5ad9d3306804c1eeca763873dc551e833d538",
+  "config_id": "stage0b_pipeline_validation",
+  "substrate": {
+   "substrate": "google/gemma-2-2b-it",
+   "revision": "299a8560bedf22ed1c72a8a11e7dce4a7f9f51f8",
+   "dtype": "torch.bfloat16",
+   "is_fallback": false
+  },
+  "n_layers": 26,
+  "read_layer": 13,
+  "diagnostic_layers": [
+   6,
+   20
+  ],
+  "dataset_hash": "356dabc4cb8fe197e929cf6fb603b234afc55f1eb3d293a4f70878a2ee370474",
+  "n_items": 120,
+  "probe_artifact_hashes": {
+   "0": "2ac2a16ed929100426cc286c8736dbe0a5b40fc83d2d3f0a60e7402617a9f0cb",
+   "1": "45f63ba7bb22c1b409e84891169fcb80f0c5a0c02960b79dfd332ef04970d723",
+   "2": "b6e70f5eba2ec9335da26affcd8fc982c88d82c7c8ee504b875403884aef01ae"
+  },
+  "peak_rss_gb": 0.785,
+  "cache_dir": "activations/stage0b",
+  "cache_hits": 0,
+  "python": "3.11.1",
+  "numpy": "2.2.4"
+ },
+ "generation_smoke": [
+  {
+   "prompt": "The capital of France is",
+   "seed": 0,
+   "max_new_tokens": 24,
+   "temperature": 0.7,
+   "do_sample": true,
+   "output": ":\n\na) Marseille\nb) Lyon\nc) Paris\nd) Strasbourg\n\nThe correct answer is **("
+  },
+  {
+   "prompt": "The capital of France is",
+   "seed": 1,
+   "max_new_tokens": 24,
+   "temperature": 0.7,
+   "do_sample": true,
+   "output": ":\n\na) Paris\nb) Lyon\nc) Marseille\nd) Nice\n\nThe answer is **(a"
+  },
+  {
+   "prompt": "Water is made of",
+   "seed": 0,
+   "max_new_tokens": 24,
+   "temperature": 0.7,
+   "do_sample": true,
+   "output": " two atoms of hydrogen and one atom of oxygen. \n\nThat's the basic definition of water, and it'"
+  },
+  {
+   "prompt": "Water is made of",
+   "seed": 1,
+   "max_new_tokens": 24,
+   "temperature": 0.7,
+   "do_sample": true,
+   "output": " two atoms.\nTrue or False?\n\nThe answer is **False**. \n\nHere's why:\n\n*"
+  },
+  {
+   "prompt": "Briefly, why is the sky blue?",
+   "seed": 0,
+   "max_new_tokens": 24,
+   "temperature": 0.7,
+   "do_sample": true,
+   "output": "\n\nHere's your answer:\n\nThe sky appears blue due to a phenomenon called **Rayleigh scattering**. Sunlight is"
+  },
+  {
+   "prompt": "Briefly, why is the sky blue?",
+   "seed": 1,
+   "max_new_tokens": 24,
+   "temperature": 0.7,
+   "do_sample": true,
+   "output": "\n\nThe sky appears blue because of a phenomenon called **Rayleigh scattering**.  \n\nHere's a breakdown:\n\n"
+  }
+ ],
+ "probe": {
+  "per_seed_test_auroc": {
+   "0": 0.9722222222222222,
+   "1": 0.9722222222222222,
+   "2": 0.9722222222222222
+  },
+  "n_train_items": 72,
+  "n_test_items": 48,
+  "n_train_clusters": 18,
+  "n_test_clusters": 12
+ },
+ "null_delta_auroc": {
+  "point": 0.04166666666666663,
+  "ci_low": 0.0,
+  "ci_high": 0.09722222222222221,
+  "covers_zero_pass": true,
+  "B": 500
+ },
+ "recall_guardrail": {
+  "fired": true,
+  "message": "operating point unrealizable on the full data (need >= 100 negatives per condition) \u2014 \u00a710 metric ladder applies",
+  "pass": true
+ },
+ "steering_known_answer": {
+  "model_dtype": "torch.bfloat16",
+  "same_site_rel_tol": 0.02,
+  "same_site_shift": {
+   "observed": -3.8113277246524024,
+   "predicted_lambda_w_dot_v": -3.815101631757326,
+   "rel_err": 0.0009892022465427936,
+   "pass": true
+  },
+  "above_read_bit_identity": {
+   "read_layer": 13,
+   "inject_layer": 14,
+   "pass": true,
+   "max_abs_diff": 0.0
+  },
+  "below_read_carry": {
+   "read_layer": 13,
+   "inject_layer": 12,
+   "pass": true
+  },
+  "pass": true
+ },
+ "pass": true
+}
