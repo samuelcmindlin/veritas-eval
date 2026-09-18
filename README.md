@@ -4,288 +4,322 @@
 
 **Can we still detect an AI's deception once it knows it is being evaluated?**
 
----
-
-## Why it matters
-
-Frontier models increasingly recognize when they are under evaluation. Anthropic's 
-*Verbalizable Representations Form a Global Workspace in Language Models* 
-(Gurnee et al., 6 July 2026) showed it **causally**: in the models they studied, 
-ablating the representations that encode a model's recognition of an evaluation 
-"can surface malicious propensities that were otherwise concealed." 
-
-In other words, awareness of being tested changes what the model does.
-
-That result is about **how often** a model misbehaves. It raises a second question 
-that has *not* been answered:
-
-> **When a model is being deceptive, does its awareness of evaluation make that
-> deception harder to _detect_?**
-
-```mermaid
-flowchart TB
-    E["<b>A model that senses it is being evaluated<br/>can respond in two different ways</b>"]
-    E --> R["<b>Deceive less often</b><br/>- a change in the <b>RATE</b> of deception.<br/>Studied, incl. the 2026 workspace paper.<br/>For a detector: the manageable case."]
-    E --> D["<b>Deceive as often, but less visibly</b><br/>- a change in the <b>DETECTABILITY</b> of deception.<br/>Unmeasured. The safety-relevant case,<br/>and the question veritas-eval targets."]
-    style D stroke:#b22,stroke-width:3px
-```
-
-Consider the second branch. Deception under evaluation 
-runs in three steps:
-
-1. **Recognize** the test.
-2. **Weigh** what passing it is worth.
-3. **Hide the lie well enough to survive scrutiny.**
-
-The first two are the *rate*, and they're already studied. The third is the
-*detectability* - and it is the subject of this work.
-
-```mermaid
-%%{init: {'themeVariables': {'quadrant1Fill': '#fbe4e4', 'quadrant1TextFill': '#a11', 'quadrantPointFill': '#a11', 'quadrantPointTextFill': '#a11'}}}%%
-quadrantChart
-    title Four kinds of deception
-    x-axis capability eval --> alignment eval
-    y-axis under-performs --> over-performs
-    quadrant-1 Deceptive alignment
-    quadrant-2 Overfitting
-    quadrant-3 Sandbagging
-    quadrant-4 Undefined
-    veritas-eval: [0.74, 0.60]
-```
-
-<sub>Taxonomy from [van der Weij et al., *AI Sandbagging: Language Models can Strategically Underperform on Evaluations* (2024)](https://arxiv.org/abs/2406.07358), Fig. 2 - [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); redrawn, with this project's slice marked.</sub>
-
-A model can exhibit deception in 4 broad ways:
-1. Hide a capability it has,
-2. Fake one it lacks,
-3. Fake being **aligned**, or
-4. Feign misalignment for a good end (rare).
-
-This project focuses on #3, the alignment lie - **presenting as more honest than it
-is**. Of the four, here we have a ground truth to check against, and an incentive
-structure that pushes the model to conceal when it counts.
-
-We measure where the answer is knowable, and mark where it isn't.
-
-Three deception detectors - **behavioral, chain-of-thought, and white-box probes** - post
-strong numbers on safety benchmarks, scored *under eval-like conditions*. If
-eval-awareness degrades detection, the numbers the industry relies on were measured in
-exactly the regime where deception is hardest to catch.
-
-### The stakes
-
-- **If detection degrades under evaluation-awareness** → a class of deception
-  evaluations is reporting detection performance that would not hold in
-  deployment, where a capable model may not perceive a test. Safety cases resting
-  on *"we can catch this the great majority of the time"* would be more confident
-  than the deployment reality warrants - precisely where the margin matters most.
-  If so, the gap needs quantifying so it can be corrected.
-- **If detection does _not_ degrade** → among the cases where the model's honest-or-deceptive status is unchanged by awareness, detection holds up; a real, albeit bounded
-  equivalence result, and a meaningful validation of the current eval approach 
-  on this axis.
-
-Either way, the field gets a measurement it does not currently have. This is a
-measurement-validity question about the *conditions* under which detection is
-scored - **not** a criticism of any benchmark, result, or team; the concern
-applies to the paradigm broadly.
-
----
-
-## What we measure
-
-Deception is not measured by a single signal. A model exposes **three observables**,
-each read by a different family of detector - and there is no reason to expect
-evaluation-awareness to degrade them equally and at the same time.
-
-```mermaid
-flowchart TB
-    M["<b>Model under test</b><br/>ground-truth honest / deceptive<br/>status independently verified"]
-    M --> A["<b>latent activations</b><br/>the internal state"]
-    M --> C["<b>reasoning trace</b><br/>the chain-of-thought"]
-    M --> O["<b>output text</b><br/>the final response"]
-    A --> AP["<b>white-box probe</b>"]
-    C --> CM["<b>CoT monitor</b>"]
-    O --> BB["<b>black-box detector</b>"]
-    AP --> S(["<b>does the detector still<br/>tell honest from deceptive?</b>"])
-    CM --> S
-    BB --> S
-```
-
-Each detector reads a different window, and each can fail under
-evaluation-awareness for a different reason:
-
-| Observable → detector | How the detector reads it | What can go wrong under evaluation-awareness |
-|---|---|---|
-| **latent activations** → white-box probe | a linear probe trained on the model's internal activations at a chosen layer | Reads the substrate the manipulation acts on. The central white-box confound: a steering effect can shift the probe's score directly, without any real change in whether the model is deceiving - which our design is built to isolate. |
-| **reasoning trace** → CoT monitor | a judge model reading the chain-of-thought for signs of deception | Only informative if the model *externalizes* the relevant reasoning; awareness can push computation off the page, and the signal is substrate-dependent. |
-| **output text** → black-box detector | a classifier over the final response and its behavioral cues | The most downstream channel - the easiest for a model to manage deliberately once it knows it is watched, and the most exposed to surface-cue confounds. |
-
-A second question falls out immediately: not just *whether* detection degrades,
-but *which* detectors are fragile (**differential fragility**, Pre-Reg H2).
-
-**How we vary awareness.** Detection is only half of it - the independent variable
-is the model's *awareness* that it is being evaluated, and we manipulate it two
-independent ways, so an observed effect can be attributed to awareness rather than
-merely correlated with it:
-
-- **Prompt-framing (IV-A)** - rewrite the same scenario to read more, or less, like
-  an evaluation, holding the underlying content fixed. A third *awareness-neutral*
-  rewrite - matched on length and perplexity, and forbidden the eval/deception
-  vocabulary a probe keys on - anchors a difference-in-differences comparison.
-- **Activation steering (IV-B, white-box)** - add an eval-awareness direction to the
-  model's internal state directly. Because steering can move a probe's readout by
-  arithmetic alone, this arm carries a battery of write-through controls (geometry
-  gate, projection-matched and random-vector controls, honest-shift attribution)
-  that a real effect must survive.
-
-**Doing this cleanly is the contribution.** The naive version - "make the
-prompt look like an eval, watch accuracy drop" - cannot work, because detectors
-partly track *"is this scenario about deception?"*, and those cues overlap the
-ones that make a prompt feel like a test. A raw accuracy drop could be
-topic-tracking, not lost detection. Separating the two is where the rigor goes:
-
-- **Ground truth, not assumption** - a case is labeled deceptive only when the
-  model holds the true answer under neutral questioning yet asserts otherwise in
-  context; this belief check runs on rollouts kept disjoint from anything a
-  detector scores (§6).
-- **Behavior held constant** - awareness is varied while the deceptive/honest
-  *status* is matched, so what's measured is the change in *detectability given deception*, read only from the cases whose status stays fixed as awareness changes (§2–3).
-- **Controls that have to pass** - for each manipulation, every rival explanation of
-  an effect (eval-context tracking, probe write-through, style shift) gets a named
-  control that must exclude it; an effect counts only if it survives the controls
-  its arm designates as *gating*. That per-arm bookkeeping is the **identification
-  matrix** (§4).
-- **One pinned metric, one pre-committed verdict** - recall@1%FPR (the share of
-  deceptive cases caught while false alarms are held to 1%), with a cluster×seed
-  bootstrap CI, mapped by frozen decision code to exactly one pre-registered
-  outcome, decided **once**. Every outcome publishes (§7, §12–13).
-
-Full treatment in the pre-registration -
-[`PREREGISTRATION.md`](PREREGISTRATION.md),
-§4 (identification) and §12–13 (inference) first.
-
----
+An independent study of how evaluation conditions affect the reliability of
+deception detectors.
 
 ## Status
 
-The stack is **built and validated**; the confirmatory science is **gated on
-review and funding** - deliberately, and transparently.
+**Completed reproduction and pipeline-validation work; confirmatory study in
+development.** The protocol is a draft, not yet frozen or formally registered.
+There is no result yet on whether evaluation awareness degrades detection.
+
+**Completed work:**
+
+- **Stage 0a:** independently recomputed metrics from Apollo's released example
+  scores, matching the shipped results within 3e-8. Confirmed the mechanism of a
+  **known** threshold-calibration discrepancy; this was not a reproduction of the
+  paper's full model-generation pipeline or exact headline run.
+- **Stage 0b:** validated an activation-to-probe-to-metrics pipeline on
+  **Gemma-2-2B using 120 toy items**, including streaming extraction and
+  known-answer steering tests. The toy data are not a deception model organism.
+- **Stage 0c:** reproduced the Pacchiardi detector's canonical notebook AUCs
+  from **released feature files**, within 2.4e-5, using independent fitting and
+  metric implementations.
+
+Reports, scope limits and reproduction commands are in
+[`results/stage0a/`](results/stage0a/),
+[`results/stage0b/`](results/stage0b/) and
+[`results/stage0c/`](results/stage0c/).
+
+**Next steps:** resolve the multi-seed estimator choice and power-simulation
+discrepancies; obtain expert review of the identification and inference design;
+implement and pilot the awareness manipulations, belief checks and model
+organisms; then finalize, freeze and publicly register the protocol before
+confirmatory data collection. Pilot data would remain separate from the
+confirmatory analysis. Stages A, B and C have not started; Stage A is the proposed
+exploratory feasibility pilot.
+
+**Compute funding would support this next phase:** model runs for feasibility
+checks, activation extraction and steering, plus judge/API costs for labeling and
+manipulation checks. Funding and domain review are needed alongside remaining
+engineering and statistical work.
 
 ```mermaid
 flowchart LR
-    A["<b>Stage 0 - complete</b><br/>measurement stack built,<br/>reproduced &amp; stress-tested"]
-    A --> G{{"<b>gate</b><br/>domain-expert review<br/>+ compute / funding"}}
-    G --> B["<b>confirmatory run</b><br/>→ one pre-registered verdict"]
+    A["Completed<br/>scoring-level reproductions<br/>and toy pipeline checks"]
+    A --> B["Next<br/>design review, implementation<br/>and feasibility pilot"]
+    B --> C["Freeze and<br/>public registration"]
+    C --> D["Confirmatory<br/>measurement"]
     style A stroke:#2a7,stroke-width:3px
-    style G stroke:#e90,stroke-width:3px
+    style B stroke:#e90,stroke-width:3px
 ```
-
-**Done - Stage 0 (de-risking the stack).** Independent reproduction of published
-detectors (matching their shipped numbers to within 3e-8 and their published AUCs to within 2.4e-5), an end-to-end activation→probe→metrics pipeline validated at
-Gemma-2-2B scale, and a statistical core whose pinned choices are each backed by simulation. (Details in [`results/`](results/); these qualify *other groups'*
-published detectors as anchors - reproduction, not novel results.)
-
-**Pending - and why.** The confirmatory measurement (Stages A→C) is not blocked on
-ideas or engineering. It is gated on two external inputs:
-
-1. **Domain-expert review** of the identification design (§4) and decision
-   function (§12–13) - the parts that most want a reviewer who has run a
-   deception-probe experiment.
-2. **Compute + funding** - GPU hours for activation extraction and steering across
-   model organisms and seeds, plus judge/API costs for belief-verification and the
-   manipulation checks.
-
-**If that gate clears,** the pre-registered outcomes are (the likely branches, not
-an exhaustive list):
-
-| Outcome | What the data would show | What it would mean |
-|---|---|---|
-| **A · Degradation confirmed** | awareness measurably lowers detector discrimination | a quantified correction for deception evals scored under eval-like conditions |
-| **B · Robust-equivalence** | no degradation among the behavior-matched cases | detection validated as robust to awareness on this axis |
-| **C · Confound-only** | the apparent effect is a confound (eval-context tracking, probe write-through, or style shift) | clarifies what detectors actually key on - a caution for reading prior "detectors work" numbers |
-
-(Plus **differential** - some families fragile, others not - and **inconclusive**.)
-A result publishes in *every* branch except an uninterpretable one - a failed
-manipulation check, which voids interpretation rather than producing a finding.
 
 <details>
 <summary>Detailed component status</summary>
 
 | Component | State |
 |---|---|
-| Statistical machinery - metrics, thresholds, provenance, joint-bootstrap design | built + simulation-validated (`stats_validation/`); 72 tests, no failures. Multi-seed estimator *semantics* still open (to pin before Stage-C) |
-| Stage 0a · Apollo scoring-level reproduction + calibration-convention panel | ✓ exact repro (max\|diff\| 2.9e-8) |
-| Stage 0b · activation→probe→metrics pipeline validation (Gemma-2-2B) | ✓ streaming pipeline validated (*not* a baseline reproduction) |
-| Stage 0c · Pacchiardi black-box anchor qualification | ✓ published AUCs matched (≤2.4e-5) |
-| F17 power simulation | machinery valid; first pass failed its own acceptance band, documented as not decision-grade |
-| Pre-registration | draft - pre-freeze |
-| Stages A / B / C - confirmatory measurement | not started |
+| Metrics, thresholds, provenance and bootstrap machinery | Implemented components with tests and supporting simulations; multi-seed estimator semantics and confirmatory integration remain unresolved. |
+| Stage 0a: Apollo scoring-level reproduction | Complete; max absolute difference 2.86e-8 against the shipped results table. |
+| Stage 0b: activation-to-probe pipeline | Complete at Gemma-2-2B toy-data scale; not a deception baseline or awareness experiment. |
+| Stage 0c: Pacchiardi scoring-level reproduction | Complete; canonical notebook AUCs matched within 2.36e-5 from released features. |
+| F17 power simulation | First pass failed its validation target; its power estimates are not decision-grade. See the [caveat and subsequent corrections](results/power_firstpass/first_pass_caveat.md). |
+| Awareness manipulations, manipulation checks and belief-verified organisms | Specified in the draft protocol; not yet implemented and piloted. Generic steering hooks have been tested. |
+| Protocol freeze and public registration | Pending. |
+| Stages A / B / C | Not started; exploratory pilot precedes confirmatory measurement. |
 
 </details>
 
 ---
 
+## Why it matters
+
+Evaluation awareness can influence model behavior. In a **Sonnet 4.5 blackmail
+scenario**, Gurnee et al. found that ablating representations associated with
+recognition of the evaluation reduced verbalized awareness and increased
+blackmail attempts. This is evidence from a specific intervention experiment,
+reported in [*Verbalizable Representations Form a Global Workspace in Language
+Models* (6 July 2026)](https://transformer-circuits.pub/2026/workspace/index.html).
+
+That finding motivates a separate measurement question:
+
+> **When a model is being deceptive, does its awareness of evaluation make that
+> deception harder to detect?**
+
+```mermaid
+flowchart TB
+    E["Evaluation awareness may affect<br/>two quantities at once"]
+    E --> R["RATE<br/>How often does deception occur?"]
+    E --> D["DETECTABILITY<br/>How reliably can a detector<br/>distinguish deceptive from honest cases?"]
+    style D stroke:#b22,stroke-width:3px
+```
+
+Both quantities matter for safety. A model that suppresses misbehavior during a
+test can conceal deployment risk; a detector that misses deception can also
+mislead an evaluator. One candidate mechanism is recognition of the test changing
+the perceived stakes and how deception is expressed. That is a hypothesis to
+investigate, not an established three-step account of all deceptive behavior.
+
+### The stakes
+
+If evaluation awareness changes detector performance, reliability depends on the
+conditions under which detection is measured. The proposed study would estimate
+that dependence under controlled conditions and test specified alternative
+explanations.
+
+**A detection change alone would not establish whether an evaluation overstates
+or understates deployment reliability.** That requires additional evidence about
+deployment behavior, awareness and distribution shift. Likewise, failure to find
+degradation would support a bounded robustness claim only if the protocol's
+equivalence, validity and power criteria pass.
+
+The intended contribution is a controlled measurement and a reusable account of
+its limits. The [July 2026 literature review](RESEARCH_REVIEW.md) did not identify
+the exact proposed experiment; that assessment needs updating before renewed
+novelty claims or substantial new experiments.
+
+---
+
+## What we propose to measure
+
+The draft compares three detector families using different observable signals.
+Their sensitivity to evaluation conditions may differ. The diagram describes the
+**planned study**, not a completed evaluation system.
+
+```mermaid
+flowchart TB
+    M["Model under test<br/>planned independent labeling checks"]
+    M --> A["latent activations"]
+    M --> C["available reasoning trace"]
+    M --> O["observable responses<br/>including follow-up elicitation"]
+    A --> AP["white-box probe"]
+    C --> CM["CoT monitor"]
+    O --> BB["black-box detector"]
+    AP --> S["Does detector discrimination<br/>change across conditions?"]
+    CM --> S
+    BB --> S
+```
+
+| Observable / detector | Proposed measurement | Important alternative explanation or limitation |
+|---|---|---|
+| **Activations / white-box probe** | A probe reads internal activations at selected layers. | Steering can shift the probe's score mechanically, without an awareness-mediated change in deception. The proposed controls address this write-through effect. |
+| **Reasoning trace / CoT monitor** | A judge reads the reasoning the model externalizes. | The trace may omit relevant reasoning; changes in externalization can change monitor performance. A suitable reasoning substrate is still to be selected. |
+| **Responses / black-box detector** | A detector uses observable responses or response probabilities, potentially including follow-up elicitation questions. | Style, topic and elicitation changes can shift detector scores. Inputs are not limited to the original final answer. |
+
+**How we propose to vary awareness.** Here, awareness means recognition that an
+interaction assesses the model's behavior, operationalized through proposed
+verbalized and behavioral checks. The protocol specifies two intervention
+approaches. Using both would provide complementary evidence; causal
+interpretation would still depend on their checks and identification assumptions.
+
+- **Prompt framing (IV-A):** compare evaluation-framed and deployment-realistic
+  versions of the same scenario. A content-preserving, awareness-neutral rewrite
+  control would help separate the awareness contrast from generic rewrite
+  effects. Deployment-realistic framing would not be assumed to eliminate
+  awareness.
+- **Activation steering (IV-B):** intervene on a candidate awareness direction.
+  Proposed controls include random and projection-matched directions, geometry
+  checks and honest-score-shift attribution. The implemented steering hooks
+  provide infrastructure; the awareness direction and checks still need to be
+  developed and validated.
+
+**The main design challenge is measurement validity.** A score change could
+reflect context cues, label changes or mechanical interference with the detector.
+The proposed design addresses these risks through:
+
+- **Independent labeling checks.** Neutral-questioning and contextual-response
+  checks would provide operational evidence of honest/deceptive status, using
+  rollouts separate from detector scoring. They do not directly reveal internal
+  beliefs or establish broad strategic misalignment. Label validity across
+  contexts and interventions remains a question for expert review (§6).
+- **Matched status and explicit scope.** The primary analysis would use cases
+  whose honest/deceptive status stays fixed across conditions; response text may
+  still differ. This is a selected, behavior-stable subset. Results would not
+  automatically generalize to cases where awareness changes whether deception
+  occurs. Selection effects and the assumptions needed for causal interpretation
+  require review (§2–3).
+- **Specified controls.** The identification matrix assigns checks to named
+  alternative explanations, including context/style tracking and probe
+  write-through. Passing those checks would support a scoped interpretation; it
+  would not exclude every possible explanation (§4).
+- **A defined endpoint and decision rules.** The proposed primary endpoint is
+  recall at 1% false-positive rate, with thresholds estimated **separately within
+  each condition**, subject to sample-size and score-granularity requirements.
+  This measures discrimination after condition-specific recalibration. A separate
+  frozen-threshold analysis would report recall **and realized false-positive
+  rate** under the changed condition. Bootstrap inference and outcome rules are
+  drafted; unresolved estimator choices must be settled before the protocol is
+  frozen (§7, §10, §12–13).
+
+The detailed **draft study protocol** is in
+[`PREREGISTRATION.md`](PREREGISTRATION.md). Start with §4 (identification) and
+§12–13 (inference and decision rules). Its `[PRE-COMMIT]` markers describe intended
+commitments at the future freeze, not an already registered study.
+
+### How results would be interpreted
+
+These are proposed outcomes, subject to review and registration. All claims
+would be limited to the tested models, detector implementations, interventions
+and behavior-stable subset.
+
+| Outcome | Required evidence | Scoped interpretation |
+|---|---|---|
+| **Degradation confirmed** | A supported loss of discrimination that survives the designated manipulation and identification checks. | Detection worsens under the tested intervention; report magnitude and uncertainty. This is not an automatic correction to deployment risk. |
+| **Bounded robustness** | The protocol's equivalence criteria pass, including an uncertainty bound below the prespecified meaningful-degradation margin, valid manipulation, assay-sensitivity and instrument checks, and sufficient validated power. | The experiment excludes degradation larger than that margin within its tested scope. A nonsignificant result alone is insufficient. |
+| **Confound-only** | The designated attenuation and controlled-effect criteria support a specified alternative explanation. | Characterizes a measurement artifact for this detector and intervention. |
+| **Inconclusive / insufficient evidence** | Uncertainty or unmet power requirements prevent the proposed substantive claim. | Report the interval, power limitations and unresolved alternatives without treating them as robustness. |
+| **Uninterpretable manipulation** | A required manipulation check fails. | No causal verdict from that run; diagnose and re-scope. |
+
+Differences across detector families would be reported alongside the applicable
+outcomes. The draft calls for reporting interpretable positive, bounded-null,
+confound and inconclusive results; failed manipulation checks would not be
+presented as evidence for or against the hypothesis.
+
+### Broader context
+
+One motivating risk is a model presenting as more aligned during assessment than
+its behavior elsewhere would warrant. The taxonomy below locates that concern;
+it does not establish that the project's current toy data or future organisms
+instantiate deceptive alignment.
+
+```mermaid
+quadrantChart
+    title Evaluation behavior taxonomy
+    x-axis capability eval --> alignment eval
+    y-axis under-performs --> over-performs
+    quadrant-1 Deceptive alignment
+    quadrant-2 Overfitting
+    quadrant-3 Sandbagging
+    quadrant-4 Undefined
+    Motivating risk: [0.74, 0.60]
+```
+
+<sub>Adapted from [van der Weij et al., *AI Sandbagging: Language Models can Strategically Underperform on Evaluations* (2024)](https://arxiv.org/abs/2406.07358), Fig. 2 - [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/); redrawn with the motivating risk marked.</sub>
+
+The proposed experiment has a narrower target: detector performance on cases
+with operationally supportable honesty/deception labels. It would not establish
+the prevalence of deceptive alignment, cover all forms of deception, or resolve
+cases where the relevant truth or intent cannot be independently assessed.
+
+---
+
 ## Reproduce & build
 
-> **Provenance invariant:** every reported number traces
-> `results/<hash>/ → config → git SHA → data version`, and re-runs from its config
-> by one command. `notebooks/` are scratch; the engine produces anything reported.
+Stage 0 reports record the inputs and provenance used for those runs. Their
+commands and machine-readable reports are linked in the component directories
+above. Reproducing those results is distinct from running the proposed awareness
+experiment, which is not yet implemented.
 
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-lock.txt
-.venv/bin/pytest            # core runs offline; tests needing the external inputs below skip (expected)
+.venv/bin/pytest
 ```
 
-**To re-run the Stage-0 reproductions**, first clone the two upstream repos - pinned in
-[`configs/external_pins.yaml`](configs/external_pins.yaml), gitignored and never vendored
-(Apollo's carries no license) - into `external/`:
+Use Python 3.11 or newer. Some tests require external repositories or model
+weights; inspect reported skips to understand what was exercised. Passing the
+available tests does not by itself establish confirmatory readiness.
+
+**Stages 0a and 0c** use released artifacts from two external repositories. Clone
+them at the revisions in [`configs/external_pins.yaml`](configs/external_pins.yaml)
+into the gitignored `external/` directory. The pin record notes no license for
+Apollo's pinned repository; its source and artifacts are not vendored here.
 
 ```bash
 git clone https://github.com/ApolloResearch/deception-detection external/deception-detection
 git -C external/deception-detection checkout f8ec401
 git clone https://github.com/LoryPack/LLM-LieDetector external/LLM-LieDetector
 git -C external/LLM-LieDetector checkout c5689fa
-PYTHONPATH=src .venv/bin/python -m analysis.stage0a   # then stage0b, stage0c
+PYTHONPATH=src .venv/bin/python -m analysis.stage0a
+PYTHONPATH=src .venv/bin/python -m analysis.stage0c
 ```
 
-The suite and pure-numpy core need none of this - the skipped tests are exactly the ones
-that exercise these external inputs, so skips on a fresh clone are expected.
+**Stage 0b** additionally loads model weights and performs inference. Review
+[`configs/experiments/stage0b.yaml`](configs/experiments/stage0b.yaml) for the model,
+revision, fallback and output paths. Access to gated weights may require accepting
+the model's terms and authenticating with its host. A run using the fallback
+validates that substrate; it does not reproduce the reported Gemma-2-2B run.
 
+```bash
+PYTHONPATH=src .venv/bin/python -m analysis.stage0b
 ```
+
+Re-running these commands writes reports to their configured output locations;
+preserve the checked-in reports if you want to compare runs. The recorded model
+revision and environment matter when comparing against the published artifacts.
+
+```text
 veritas-eval/
-├─ PREREGISTRATION.md      the science - authoritative what & why
-├─ ARCHITECTURE.md  the stage interface contracts
-├─ RESEARCH_REVIEW.md             novelty / related-work map
-├─ src/         metrics · analysis (stage 0 + power) · models · detectors · data
-├─ configs/     experiments as configs        results/   provenance-tagged outputs
-├─ stats_validation/  Monte-Carlo evidence behind every pinned statistical choice
-└─ tests/       known-answer + property tests for the load-bearing machinery
+├─ PREREGISTRATION.md   draft study design and proposed decision rules
+├─ ARCHITECTURE.md      stage interface contracts and implementation plan
+├─ RESEARCH_REVIEW.md   July 2026 related-work and novelty assessment
+├─ src/                implemented metrics, analyses, models and detectors
+├─ configs/            experiment configurations and external dependency pins
+├─ results/            recorded runs, provenance and limitations
+├─ stats_validation/   simulations supporting and challenging design choices
+└─ tests/              component and known-answer checks
 ```
 
-**Read next:** the pre-registration (start at §4 and §12–13) · the architecture contracts · `stats_validation/README.md` (the simulation
-evidence behind each statistical pin).
-
----
+**Read next:** the draft protocol (§4 and §12–13),
+[`ARCHITECTURE.md`](ARCHITECTURE.md),
+[`stats_validation/README.md`](stats_validation/README.md), and the
+[power-simulation caveat](results/power_firstpass/first_pass_caveat.md).
 
 ## Relationship to concurrent work
 
-The workspace paper and this project are contemporaneous: it published on 6 July
-2026, and this repository's first commit is dated the next day. The design was
-already underway and did not draw on the paper; on reading it, the design engaged
-it directly, and the paper sharpened the pre-registration (the `[WSP]` revisions).
-The two are **complementary, not competing**: the workspace paper shows that
-evaluation-awareness moves *behavior*; veritas-eval targets the question it leaves
-open - whether awareness also moves *detectability* - and treats the paper's
-ablation as one candidate manipulation among several.
-
----
+The workspace paper informed the draft's `[WSP]` revisions and suggests candidate
+interventions and controls. Its behavioral findings motivate the detector
+measurement question; they do not establish this project's hypothesis. The
+related-work assessment in [`RESEARCH_REVIEW.md`](RESEARCH_REVIEW.md) is dated
+July 2026 and should be refreshed before claiming an unoccupied research gap.
 
 ## Notes & license
 
-- **Pre-registered and unfrozen** - the design is binding only after the §20
-  freeze; nothing in it is committed until then. The §4 identification matrix and
-  the §12–13 decision function are the parts most in need of expert review.
+- **Draft protocol; not yet frozen or formally registered.** Final commitments
+  would be recorded through the §20 freeze and public registration before
+  confirmatory data collection. The §21 checklist records unresolved items.
+- **Review priorities:** the §4 identification matrix, label validity, the
+  §12–13 inference and decision rules, and the documented estimator/power issues.
 
 MIT - see [`LICENSE`](LICENSE).
 
@@ -294,6 +328,7 @@ MIT - see [`LICENSE`](LICENSE).
   title  = {veritas-eval: Does Evaluation-Awareness Causally Degrade Deception Detection?},
   author = {Mindlin, Samuel},
   year   = {2026},
-  note   = {Pre-registered study harness (pre-freeze). Repository URL to be added at publication.}
+  url    = {https://github.com/samuelcmindlin/veritas-eval},
+  note   = {Draft study protocol and research software; not yet formally registered. Includes scoring-level reproductions and toy-data pipeline validation.}
 }
 ```
